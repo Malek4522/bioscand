@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../constants/colors.dart';
 import '../../models/scan_result.dart';
+import '../../services/api_service.dart';
 import 'diagnostic_result_screen.dart';
 
 class ScanLoadingScreen extends StatefulWidget {
   final String imagePath;
-  final String plantType;
+  final String plantType; // English name for API
+  final String? plantTypeDisplay; // French name for display
+  final Map<String, dynamic>? environmentalData;
 
   const ScanLoadingScreen({
     super.key,
     required this.imagePath,
     required this.plantType,
+    this.plantTypeDisplay,
+    this.environmentalData,
   });
 
   @override
@@ -25,23 +30,86 @@ class _ScanLoadingScreenState extends State<ScanLoadingScreen> {
   }
 
   Future<void> _simulateAnalysis() async {
-    // Simulate server processing time
-    await Future.delayed(const Duration(seconds: 3));
+    try {
+      String prediction = 'Healthy';
+      String? diseaseClass;
+      double? confidence;
 
-    if (mounted) {
-      // Generate mock result
-      final result = ScanResult.getMockResult(
-        widget.plantType,
-        widget.imagePath,
-      );
+      // Call environmental health API if environmental data is provided
+      if (widget.environmentalData != null) {
+        try {
+          final envResponse = await ApiService.predictEnvironmentalHealth(
+            widget.environmentalData!,
+          );
+          prediction = envResponse['prediction'] ?? 'Healthy';
+          print('DEBUG: Environmental prediction: $prediction');
+        } catch (e) {
+          print('DEBUG: Environmental API error: $e');
+          // Continue with default prediction if API fails
+        }
+      }
 
-      // Navigate to results
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DiagnosticResultScreen(result: result),
-        ),
-      );
+      // Call plant disease API
+      try {
+        final diseaseResponse = await ApiService.predictPlantDisease(
+          widget.plantType,
+          widget.imagePath,
+        );
+
+        if (diseaseResponse['success'] == true) {
+          final data = diseaseResponse['data'] as Map<String, dynamic>;
+          final classId = data['predicted_class']?.toString();
+          if (classId != null) {
+            diseaseClass = classId;
+          }
+          confidence = (data['confidence'] as num?)?.toDouble();
+          print(
+            'DEBUG: Disease prediction: $diseaseClass (ID: $classId) with confidence: $confidence',
+          );
+        }
+      } catch (e) {
+        print('DEBUG: Plant disease API error: $e');
+        // Show error to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erreur lors de l\'analyse: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+
+      if (mounted) {
+        // Generate result with API data
+        final result = ScanResult.getMockResult(
+          widget.plantTypeDisplay ?? widget.plantType,
+          widget.imagePath,
+          prediction: prediction,
+          environmentalData: widget.environmentalData,
+          diseaseClass: diseaseClass,
+          confidence: confidence,
+        );
+
+        // Navigate to results
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DiagnosticResultScreen(result: result),
+          ),
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Analysis error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de l\'analyse: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -112,7 +180,7 @@ class _ScanLoadingScreenState extends State<ScanLoadingScreen> {
                       const Icon(Icons.eco, color: AppColors.primary, size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        widget.plantType,
+                        widget.plantTypeDisplay ?? widget.plantType,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

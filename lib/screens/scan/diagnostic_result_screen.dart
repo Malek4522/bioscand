@@ -314,6 +314,49 @@ class _DiagnosticResultScreenState extends State<DiagnosticResultScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
+                        'Prédiction IA',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              (widget.result.diseaseName?.toLowerCase() ==
+                                  'healthy')
+                              ? AppColors.greenBg
+                              : AppColors.redBg,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          (widget.result.diseaseName?.toLowerCase() ==
+                                  'healthy')
+                              ? 'Healthy'
+                              : 'Diseased',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color:
+                                (widget.result.diseaseName?.toLowerCase() ==
+                                    'healthy')
+                                ? AppColors.greenIcon
+                                : AppColors.redIcon,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
                         'Confiance de l\'IA',
                         style: TextStyle(
                           fontSize: 14,
@@ -370,12 +413,22 @@ class _DiagnosticResultScreenState extends State<DiagnosticResultScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.orangeBg,
+                        color:
+                            (widget.result.diseaseName?.toLowerCase() ==
+                                'healthy')
+                            ? AppColors.greenBg
+                            : AppColors.orangeBg,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
-                        Icons.warning_amber_rounded,
-                        color: AppColors.orangeIcon,
+                      child: Icon(
+                        (widget.result.diseaseName?.toLowerCase() == 'healthy')
+                            ? Icons.check_circle_outline
+                            : Icons.warning_amber_rounded,
+                        color:
+                            (widget.result.diseaseName?.toLowerCase() ==
+                                'healthy')
+                            ? AppColors.greenIcon
+                            : AppColors.orangeIcon,
                         size: 28,
                       ),
                     ),
@@ -384,9 +437,12 @@ class _DiagnosticResultScreenState extends State<DiagnosticResultScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Maladie Détectée',
-                            style: TextStyle(
+                          Text(
+                            (widget.result.diseaseName?.toLowerCase() ==
+                                    'healthy')
+                                ? 'État de Santé'
+                                : 'Maladie Détectée',
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textSecondary,
