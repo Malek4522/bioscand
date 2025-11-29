@@ -78,4 +78,36 @@ class ApiService {
       throw Exception('Error calling plant disease API: $e');
     }
   }
+
+  /// Gets treatment recommendations from LLM
+  /// Returns: {"medicine": "...", "dosage": "..."}
+  static Future<Map<String, dynamic>> getTreatmentRecommendations(
+    String message,
+  ) async {
+    try {
+      final url = Uri.parse('$baseUrl/plant-treatment');
+      print('DEBUG: Calling treatment API at: $url');
+      print('DEBUG: Message: $message');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'message': message}),
+      );
+
+      print('DEBUG: Treatment API response status: ${response.statusCode}');
+      print('DEBUG: Treatment API response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception(
+          'Failed to get treatment recommendations: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Error in getTreatmentRecommendations: $e');
+      throw Exception('Error calling treatment API: $e');
+    }
+  }
 }

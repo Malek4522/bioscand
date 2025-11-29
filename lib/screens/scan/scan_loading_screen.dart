@@ -80,6 +80,55 @@ class _ScanLoadingScreenState extends State<ScanLoadingScreen> {
         }
       }
 
+      // Get treatment recommendations from LLM if disease is detected
+      String? medicine;
+      String? dosage;
+
+      print('DEBUG: Checking if treatment API should be called...');
+      print('DEBUG: diseaseClass = $diseaseClass');
+      print(
+        'DEBUG: diseaseClass?.toLowerCase() = ${diseaseClass?.toLowerCase()}',
+      );
+
+      if (diseaseClass != null && diseaseClass.toLowerCase() != 'healthy') {
+        print('DEBUG: Disease detected, calling treatment API');
+        try {
+          // Construct message with disease, plant, and environmental data
+          final StringBuffer messageBuffer = StringBuffer();
+          messageBuffer.write('Plant: ${widget.plantType}, ');
+          messageBuffer.write('Disease: $diseaseClass');
+
+          if (widget.environmentalData != null) {
+            widget.environmentalData!.forEach((key, value) {
+              messageBuffer.write(', $key: $value');
+            });
+          }
+
+          final message = messageBuffer.toString();
+          print('DEBUG: Requesting treatment for: $message');
+
+          final treatmentResponse =
+              await ApiService.getTreatmentRecommendations(message);
+          medicine = treatmentResponse['medicine']?.toString();
+          dosage = treatmentResponse['dosage']?.toString();
+
+          print(
+            'DEBUG: Treatment received - Medicine: $medicine, Dosage: $dosage',
+          );
+        } catch (e) {
+          print('DEBUG: Treatment API error: $e');
+          // Continue without treatment recommendations if API fails
+        }
+      } else {
+        print(
+          'DEBUG: Skipping treatment API (plant is healthy or no disease class)',
+        );
+      }
+
+      print(
+        'DEBUG: Creating ScanResult with medicine=$medicine, dosage=$dosage',
+      );
+
       if (mounted) {
         // Generate result with API data
         final result = ScanResult.getMockResult(
@@ -89,7 +138,14 @@ class _ScanLoadingScreenState extends State<ScanLoadingScreen> {
           environmentalData: widget.environmentalData,
           diseaseClass: diseaseClass,
           confidence: confidence,
+          medicine: medicine,
+          dosage: dosage,
         );
+
+        print(
+          'DEBUG: ScanResult created with ${result.recommendations.length} recommendations',
+        );
+        print('DEBUG: Recommendations: ${result.recommendations}');
 
         // Navigate to results
         Navigator.pushReplacement(

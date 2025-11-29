@@ -36,20 +36,45 @@ class ScanResult {
     Map<String, dynamic>? environmentalData,
     String? diseaseClass,
     double? confidence,
+    String? medicine,
+    String? dosage,
   }) {
+    // Build recommendations and treatment plan from LLM data if available
+    List<String> recommendations;
+    String? treatmentPlan;
+
+    print('DEBUG [ScanResult]: medicine=$medicine, dosage=$dosage');
+
+    if (medicine != null && dosage != null) {
+      // Use LLM-generated recommendations
+      print('DEBUG [ScanResult]: Using LLM-generated recommendations');
+      recommendations = ['Médicament recommandé: $medicine', 'Dosage: $dosage'];
+      treatmentPlan = 'Traitement: $medicine. Dosage: $dosage';
+    } else {
+      // Fallback to default recommendations for healthy plants or errors
+      print(
+        'DEBUG [ScanResult]: Using default recommendations (medicine or dosage is null)',
+      );
+      recommendations = [
+        'Maintenir un arrosage régulier',
+        'Assurer une bonne circulation d\'air',
+        'Surveiller l\'apparition de symptômes',
+      ];
+      treatmentPlan = null;
+    }
+
+    print(
+      'DEBUG [ScanResult]: Created ${recommendations.length} recommendations',
+    );
+    print('DEBUG [ScanResult]: Recommendations: $recommendations');
+
     return ScanResult(
       plantName: plantType,
       plantType: plantType,
       confidence: confidence ?? 0.94,
       diseaseName: diseaseClass,
-      recommendations: [
-        'Retirer immédiatement les feuilles infectées',
-        'Améliorer la circulation d\'air autour des plants',
-        'Éviter l\'arrosage par aspersion',
-        'Appliquer un fongicide à base de cuivre',
-      ],
-      treatmentPlan:
-          'Traitement fongicide recommandé : Bouillie bordelaise (sulfate de cuivre) à appliquer tous les 7-10 jours. Éliminer les parties infectées et brûler les débris végétaux.',
+      recommendations: recommendations,
+      treatmentPlan: treatmentPlan,
       timestamp: DateTime.now(),
       imagePath: imagePath,
       prediction: prediction ?? 'Moderate Stress',
