@@ -110,4 +110,46 @@ class ApiService {
       throw Exception('Error calling treatment API: $e');
     }
   }
+
+  /// Gets scan history data
+  /// Returns: [{"image": "base64_string", "disease": "disease_name"}]
+  static Future<List<Map<String, dynamic>>> getHistoryData() async {
+    try {
+      // History API uses port 8000, not the base URL port
+      final baseUri = Uri.parse(baseUrl);
+      final historyUrl = Uri(
+        scheme: baseUri.scheme,
+        host: baseUri.host,
+        port: 8000,
+        path: '/get-data-phone',
+      );
+
+      print('DEBUG: Calling history API at: $historyUrl');
+
+      final response = await http.get(historyUrl);
+
+      print('DEBUG: History API response status: ${response.statusCode}');
+      print('DEBUG: History API response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData =
+            jsonDecode(response.body) as Map<String, dynamic>;
+
+        // Extract the 'data' array from the response
+        if (responseData.containsKey('data')) {
+          final List<dynamic> data = responseData['data'] as List<dynamic>;
+          print('DEBUG: Found ${data.length} history items');
+          return data.map((item) => item as Map<String, dynamic>).toList();
+        } else {
+          print('DEBUG: No "data" field in response, returning empty list');
+          return [];
+        }
+      } else {
+        throw Exception('Failed to get history data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('DEBUG: Error in getHistoryData: $e');
+      throw Exception('Error calling history API: $e');
+    }
+  }
 }
